@@ -1,6 +1,6 @@
 # Сервис для хранения секретных данных
 
-JSON API сервис позволяет шифровать и хранить секретные данные с ограниченным временем жизни. 
+JSON API сервис, который позволяет шифровать и хранить секретные данные с ограниченным временем жизни. 
 
 ## Используемый стек
 
@@ -20,41 +20,88 @@ JSON API сервис позволяет шифровать и хранить с
     ```bash
     git clone https://github.com/AndMartyan/secret_marks.git
     ```
-
-
-## Запуск с помощью Docker Compose
-
-1. Склонируйте репозиторий:
+3. Перейдите в каталог с сервисом:
 
     ```bash
-    git clone https://github.com/AndMartyan/secret_marks.git
+    cd secret_marks
     ```
-
-2. Перейдите в каталог с сервисом:
+4. При необходимости измените параметры в `Makefile` и `docker-compose.yml`
+5. Отредактируйте файл `.env-non-dev`
+   ```bash
+   DB_HOST=db #хост продакшн-базы 
+   DB_PORT=1221 #порт продакшн-базы 
+   DB_NAME=postgres #название продакшн-базы 
+   DB_USER=postgres #имя пользователя продакшн-базы 
+   DB_PASS=postgres #пароль пользователя продакшн-базы 
+   
+   DB_HOST_TEST=db #хост тестовой базы 
+   DB_PORT_TEST=1221 #порт тестовой базы 
+   DB_NAME_TEST=postgres #название тестовой базы
+   DB_USER_TEST=postgres #имя пользователя тестовой базы
+   DB_PASS_TEST=postgres #пароль пользователя тестовой базы
+   
+   POSTGRES_DB=postgres
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   
+   KEY_PATH =encryption_key.txt #путь к ключу шифрования
+    ```
+6. Выполните команду:
 
     ```bash
-    cd your-service
+    make container
     ```
 
-3. Создайте файл `.env` и укажите в нем необходимые переменные окружения (например, `DB_USER`, `DB_PASS`, `DB_NAME`):
-
-    ```env
-    DB_USER=myuser
-    DB_PASS=mypassword
-    DB_NAME=mydatabase
-    ```
-
-4. Запустите сервис с помощью Docker Compose:
+7. Запустите сервис с помощью Docker Compose:
 
     ```bash
-    docker-compose up -d
+    docker compose -p secret_marks \
+                -f docker-compose.yml \
+                up -d
     ```
-
-5. Сервис будет доступен по адресу `http://localhost:8000`.
+8. Проверьте работоспособность сервиса в соответствии с настройками
 
 ## Остановка сервиса
 
 Для остановки сервиса выполните следующую команду:
 
-```bash
-docker-compose down
+   ```bash
+   docker-compose -p secret_marks  down
+   ```
+
+## Работа сервиса
+Сервис имеет два эндпоинта:
+
+- `POST /generate` принимает секрет, кодовую фразу и период жизни секрета в минутах, возвращает secret_key по которому этот секрет можно получить.
+  Пример отправки HTTP-запроса:
+  ```python3
+  import requests
+  UVICORN_SCHEME = 'http://'
+  UVICORN_HOST = '127.0.0.1'
+  UVICORN_PORT = '8000'
+  response = requests.post(url=UVICORN_SCHEME + UVICORN_HOST + ":" + UVICORN_PORT + '/generate/',
+                         json={"secret": "string","passphrase": "string","lifetime_minutes": 0})
+  ```
+- `GET /secrets/{secret_key}` принимает на вход кодовую фразу и отдает секрет.
+  Пример отправки HTTP-запроса:
+  ```python3
+  import requests
+  UVICORN_SCHEME = 'http://'
+  UVICORN_HOST = '127.0.0.1'
+  UVICORN_PORT = '8000'
+  secret_key = ''
+  response = requests.get(url=UVICORN_SCHEME + UVICORN_HOST + ":" + UVICORN_PORT + f'/secrets/{secret_key}', json = {"passphrase": "string"}) 
+  ```
+Подробная документация доступна по эндпоинту : `GET <fastapi_sevice>/docs` 
+
+## Тестирование
+1. Перейдите в директорию `/tests`
+2. Выполните команду 
+```python3
+pytest test_app.py
+```
+
+
+## Версия
+
+23.10
