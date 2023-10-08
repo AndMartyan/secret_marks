@@ -102,7 +102,7 @@ JSON API сервис, который позволяет шифровать и �
 ## Тестирование
 Выполните команду 
 ```python3
-docker exec secret_marks pytest tests/test_app.py
+sudo docker exec secret_marks pytest tests/test_app.py
 ```
 
 
