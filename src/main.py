@@ -1,61 +1,49 @@
 import uuid
-from fastapi import FastAPI, HTTPException
-from database import Base, engine, SessionLocal
-from models import Secret
-from schemas import SecretRequest, SecretResponse
-from encryption import fernet
-from datetime import datetime, timedelta
+
+from fastapi import FastAPI, HTTPException, Depends
+from database import get_async_session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, insert, delete
+
+from models import secret
+from schemas import SecretRequest, SecretResponse, FinalResponse
+from encryption import hash_text, match_hashed_text, secret_encode, secret_decode
 
 # Инициализация приложения
 app = FastAPI(title="Secret marks")
 
-# Создание таблицы в базе данных, если её нет
-Base.metadata.create_all(bind=engine)
-
 
 @app.post("/generate", response_model=SecretResponse)
-async def generate_secret(request: SecretRequest):
-    # Шифрование секрета
-    encrypted_secret = fernet.encrypt(request.secret.encode())
-    # Шифрование кодовой фразы
-    encrypted_passphrase = fernet.encrypt(request.passphrase.encode())
-    # Вычисление времени жизни секрета
-    lifetime = datetime.now() + timedelta(minutes=request.lifetime_minutes)
+async def generate_secret(request: SecretRequest,
+                          session: AsyncSession = Depends(get_async_session)):
+    """Метод  принимает секрет и кодовую фразу и отдает `secret_key` по которому этот секрет можно получить."""
+    hashed_secret = hash_text(request.secret, request.passphrase)
+    encrypted_secret = secret_encode(request.secret, hashed_secret)
     # Сохранение данных в базе
-    db_secret = Secret(id=str(uuid.uuid4()), secret_text=encrypted_secret, passphrase=encrypted_passphrase,
-                       lifetime_minutes=request.lifetime_minutes)
-    db = SessionLocal()
-    db.add(db_secret)
-    db.commit()
-    db.refresh(db_secret)
-    return {"secret_key": str(db_secret.id), "lifetime": lifetime}
+    secret_key = str(uuid.uuid4().hex)
+    stmt = insert(secret).values(id=secret_key, secret_text=encrypted_secret, hash=hashed_secret)
+    await session.execute(stmt)
+    await session.commit()
+    return {"secret_key": secret_key}
 
 
-@app.get("/secrets/{secret_key}", response_model=SecretResponse)
-async def get_secret(secret_key: str, passphrase: str):
-    db = SessionLocal()
+@app.get("/secrets/{secret_key}", response_model=FinalResponse)
+async def get_secret(passphrase: str,
+                     secret_key: str,
+                     session: AsyncSession = Depends(get_async_session)):
+    """Метод принимает на вход кодовую фразу и отдает секрет."""
     # Поиск секрета в базе данных
-    secret = db.query(Secret).filter(Secret.id == secret_key).first()
-    if not secret:
+    stmt = select(secret).filter(secret.c.id == secret_key)
+    result = await session.execute(stmt)
+    db_entry = result.all()
+    if not db_entry:
         raise HTTPException(status_code=404, detail="Secret not found")
-    # Расшифровка секретной фразы
-    decrypted_passphrase = fernet.decrypt(secret.passphrase).decode()
+    decrypted_secret = secret_decode(encoded=db_entry[0][1], key=db_entry[0][2])
     # Проверка соответствия фраз
-    if decrypted_passphrase == passphrase:
-        now = datetime.now()
-        # Проверка expire-периода
-        if now <= secret.created_at + timedelta(minutes=secret.lifetime_minutes):
-            # Расшифровка секрета
-            decrypted_secret = fernet.decrypt(secret.secret_text).decode()
-            # Удаление секрета
-            db.delete(secret)
-            db.commit()
-            return {"secret_key": decrypted_secret,
-                    "lifetime": secret.created_at + timedelta(minutes=secret.lifetime_minutes)}
-        else:
-            # Удаление секрета по expire-периоду
-            db.delete(secret)
-            db.commit()
-            raise HTTPException(status_code=400, detail="Secret has expired")
+    if match_hashed_text(hashed_text=db_entry[0][2], secret=decrypted_secret, user_salt=passphrase):
+        query = delete(secret).where(secret.c.id == secret_key)
+        await session.execute(query)
+        await session.commit()
+        return {"secret": decrypted_secret}
     else:
         raise HTTPException(status_code=404, detail="Secret not found")

@@ -1,22 +1,23 @@
-import os
-
-from cryptography.fernet import Fernet
-from config import KEY_PATH
-
-def read_encryption_key():
-    """Функция для считывания ключа из файла"""
-    key_file = KEY_PATH
-    if os.path.exists(key_file):
-        with open(key_file, "rb") as file:
-            key = file.read()
-            return key
-    else:
-        # Если файл с ключом отсутствует, генерируем новый ключ
-        key = Fernet.generate_key()
-        with open(key_file, "wb") as file:
-            file.write(key)
-        return key
+import hashlib
 
 
-SECRET_KEY = read_encryption_key()
-fernet = Fernet(SECRET_KEY)
+def hash_text(text: str, salt: str) -> str:
+    return hashlib.sha256(salt.encode() + text.encode()).hexdigest()
+
+
+def match_hashed_text(hashed_text: str, secret: str, user_salt: str) -> bool:
+    return hashed_text == hashlib.sha256(user_salt.encode() + secret.encode()).hexdigest()
+
+
+def secret_encode(secret: str, key: str):
+    encoded = bytearray(len(secret))
+    for i in range(len(secret)):
+        encoded[i] = ord(secret[i]) ^ ord(key[i % len(key)])
+    return bytes(encoded)
+
+
+def secret_decode(encoded, key: str) -> str:
+    decoded = bytearray(len(encoded))
+    for i in range(len(encoded)):
+        decoded[i] = encoded[i] ^ ord(key[i % len(key)])
+    return decoded.decode()

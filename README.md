@@ -7,6 +7,7 @@ JSON API сервис, который позволяет шифровать и �
 - [FastAPI](https://fastapi.tiangolo.com/) современный, быстрый (высокопроизводительный) веб-фреймворк для создания API.
 - [PostgreSQL](https://www.postgresql.org) — свободная объектно-реляционная система управления базами данных.
 - [Uvicorn](https://www.uvicorn.org/) реализация веб-сервера ASGI для Python.
+- [Alembic](https://alembic.sqlalchemy.org/en/latest/) облегченный инструмент миграции баз данных для использования с SQLAlchemy.
 - [Pytest](https://docs.pytest.org/en/7.4.x/contents.html) полнофункциональный инструмент тестирования на Python
 - [Docker](https://docs.docker.com/get-started/overview/) открытая платформа для разработки, доставки и запуска приложений.
 - [Docker compose](https://docs.docker.com/compose/) инструмент для определения и запуска многоконтейнерных приложений Docker. 
@@ -77,25 +78,22 @@ JSON API сервис, который позволяет шифровать и �
 ## Работа сервиса
 Сервис имеет два эндпоинта:
 
-- `POST /generate` принимает секрет, кодовую фразу и период жизни секрета в минутах, возвращает secret_key по которому этот секрет можно получить.
+- `POST /generate` принимает секрет, кодовую фразу, возвращает secret_key по которому этот секрет можно получить.
   Пример отправки HTTP-запроса:
-  ```python3
-  import requests
-  UVICORN_SCHEME = 'http://'
-  UVICORN_HOST = '127.0.0.1'
-  UVICORN_PORT = '8000'
-  response = requests.post(url=UVICORN_SCHEME + UVICORN_HOST + ":" + UVICORN_PORT + '/generate/',
-                         json={"secret": "string","passphrase": "string","lifetime_minutes": 0})
+  ```bash
+  curl -X 'POST' 
+  '<UVICORN_SCHEME>://<UVICORN_HOST>:<UVICORN_PORT>/generate' 
+  -H 'accept: application/json' 
+  -H 'Content-Type: application/json' 
+  -d '{ "secret": "string", "passphrase": "string"}'
   ```
+  
 - `GET /secrets/{secret_key}` принимает на вход кодовую фразу и отдает секрет.
   Пример отправки HTTP-запроса:
-  ```python3
-  import requests
-  UVICORN_SCHEME = 'http://'
-  UVICORN_HOST = '127.0.0.1'
-  UVICORN_PORT = '8000'
-  secret_key = ''
-  response = requests.get(url=UVICORN_SCHEME + UVICORN_HOST + ":" + UVICORN_PORT + f'/secrets/{secret_key}', json = {"passphrase": "string"}) 
+  ```bash
+  curl -X 'GET' 
+  '<UVICORN_SCHEME>://<UVICORN_HOST>:<UVICORN_PORT>/secrets/<secret_key>?passphrase=<passphrase>' 
+  -H 'accept: application/json'
   ```
 Подробная документация доступна по эндпоинту : `GET <fastapi_sevice>/docs` 
 
