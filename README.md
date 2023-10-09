@@ -108,4 +108,4 @@ sudo docker exec secret_marks pytest tests/test_app.py
 
 ## Версия
 
-23.10 GKE
+23.10
