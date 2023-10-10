@@ -1,5 +1,4 @@
 from sqlalchemy import Column, LargeBinary, String, Table
-# from database import Base, metadata
 from sqlalchemy import MetaData
 
 metadata = MetaData()
