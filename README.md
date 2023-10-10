@@ -81,18 +81,18 @@ JSON API сервис, который позволяет шифровать и �
 - `POST /generate` принимает секрет, кодовую фразу, возвращает secret_key по которому этот секрет можно получить.
   Пример отправки HTTP-запроса:
   ```bash
-  curl -X 'POST' 
-  '<UVICORN_SCHEME>://<UVICORN_HOST>:<UVICORN_PORT>/generate' 
-  -H 'accept: application/json' 
-  -H 'Content-Type: application/json' 
+  curl -X 'POST' \
+  'http://0.0.0.0:8000/generate' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
   -d '{ "secret": "string", "passphrase": "string"}'
   ```
   
 - `GET /secrets/{secret_key}` принимает на вход кодовую фразу и отдает секрет.
   Пример отправки HTTP-запроса:
   ```bash
-  curl -X 'GET' 
-  '<UVICORN_SCHEME>://<UVICORN_HOST>:<UVICORN_PORT>/secrets/<secret_key>?passphrase=<passphrase>' 
+  curl -X 'GET' \
+  'http://0.0.0.0:8000/secrets/<secret_key>?passphrase=string' \
   -H 'accept: application/json'
   ```
 Подробная документация доступна по эндпоинту : `GET <fastapi_sevice>/docs` 
