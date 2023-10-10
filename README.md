@@ -49,8 +49,6 @@ JSON API сервис, который позволяет шифровать и �
    POSTGRES_DB=postgres
    POSTGRES_USER=postgres
    POSTGRES_PASSWORD=postgres
-   
-   KEY_PATH =encryption_key.txt #путь к ключу шифрования
     ```
 6. Выполните команду:
 
