@@ -1,17 +1,5 @@
 version: "3.7"
 services:
-  app:
-    build:
-      context: .
-    env_file:
-      - .env-non-dev
-    container_name: secret_marks
-    image: secret_marks:latest
-    command: [ "/secret_marks/docker/app.sh" ]
-    ports:
-      - 8000:8000
-    depends_on:
-      - db
 
   db:
     image: postgres:15
@@ -20,3 +8,16 @@ services:
       - "5432:5432"
     env_file:
       - .env-non-dev
+
+  app:
+    build:
+      context: .
+    env_file:
+      - .env-non-dev
+    container_name: secret_marks
+    image: secret_marks:latest
+    command: [ "/secret_marks/docker/wait-for-it.sh", "db:DB_PORT","/secret_marks/docker/app.sh" ]
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
