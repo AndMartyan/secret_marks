@@ -3,9 +3,6 @@ FROM python:3.7
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# dependencies builder
-FROM baseimage as builder
-
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_ROOT_USER_ACTION="ignore" \
