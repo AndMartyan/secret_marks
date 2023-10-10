@@ -16,7 +16,7 @@ services:
       - .env-non-dev
     container_name: secret_marks
     image: secret_marks:latest
-    command: [ "/secret_marks/docker/wait-for-it.sh", "db:5432","/secret_marks/docker/app.sh" ]
+    command: [ "/secret_marks/docker/wait-for-it.sh", "db:5432", "--","/secret_marks/docker/app.sh" ]
     ports:
       - 8000:8000
     depends_on:
